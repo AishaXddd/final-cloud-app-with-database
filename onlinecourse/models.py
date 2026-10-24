@@ -94,7 +94,55 @@ class Enrollment(models.Model):
     mode = models.CharField(max_length=5, choices=COURSE_MODES, default=AUDIT)
     rating = models.FloatField(default=5.0)
 
+# Question model
+class Question(models.Model):
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE
+    )
+    question_text = models.CharField(max_length=200)
+    grade = models.IntegerField(default=1)
 
+    def __str__(self):
+        return self.question_text
+
+    def is_get_score(self, selected_ids):
+        correct_choices = self.choice_set.filter(is_correct=True)
+        selected_correct = correct_choices.filter(
+            id__in=selected_ids
+        ).count()
+
+        return (
+            correct_choices.count() == selected_correct
+            and self.choice_set.filter(id__in=selected_ids).count()
+            == correct_choices.count()
+        )
+
+
+# Choice model
+class Choice(models.Model):
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE
+    )
+    choice_text = models.CharField(max_length=200)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.choice_text
+
+
+# Submission model
+class Submission(models.Model):
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.CASCADE
+    )
+    choices = models.ManyToManyField(Choice)
+    submission_date = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return f"Submission {self.id}"
 # <HINT> Create a Question Model with:
     # Used to persist question content for a course
     # Has a One-To-Many (or Many-To-Many if you want to reuse questions) relationship with course
